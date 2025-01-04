@@ -31,36 +31,34 @@ def handle(event, context):
     print("Event ^^^ ")
     visitedURL = eventDict["visitedURL"]
     runId = eventDict["runId"]
-    sourceURL = visitedURL #sourceURL of this run becomes visitedURL
+    sourceURL = visitedURL  #sourceURL becomes visitedURL // early logging
     rootURL = eventDict["rootURL"]
 
     print(f"Initiating crawl for URL={visitedURL}, runId={runId}, sourceURL={sourceURL}, rootURL={rootURL}")
 
-    #Step 1 - Retrieve all links from provided URL
+    # Retrieve all links from URL
     referrals = fetchLinksFromURL(visitedURL) 
     print(f"Fetched {len(referrals)} links from {rootURL}")
 
-    #Step 2 - Filter out all links that don't start with provided RootURL
-    # (In other words, links that are on different domains)   
+    # Filter out links from different domain ( not rooturl)  
     filteredDomainReferrals = filterLinkCandidatesForRootURL(rootURL, referrals)
     print(f"Found {len(filteredDomainReferrals)} referrals sourced from {rootURL}")
 
-    #Step 3 - Retrieve filtered records from above
+    # Retrieve filtered records from above
     visitedLinkRecords = fetchVisitedCandidates(filteredDomainReferrals, runId)
     print(f"Already visited {len(visitedLinkRecords)}")
     visitedLinks = map(lambda record: record["visitedURL"], visitedLinkRecords)
 
-    #Step 4 - Filter out records that have already been visited, and be left
-    #         with links that that need to be visited
+    # Filter out records that are already visited
     remainingCrawlTargets = findUnvisitedLinks(filteredDomainReferrals, visitedLinks)
     print(f"{len(remainingCrawlTargets)} need to be processed")
     
     if (len(remainingCrawlTargets) > 0):
-        #Step 5 - Mark all links as visited (eager marking)
+        # Mark all links as visited (eager marking)
         markAllVisited(remainingCrawlTargets, runId, sourceURL, rootURL) # mark them all as visited
         print(f"Marked {len(remainingCrawlTargets)} as visited")
 
-        #Step 6 - Enqueue them all for later processing
+        # Enqueue them all for later processing
         enqueueAll(remainingCrawlTargets, runId, sourceURL, rootURL) # enqueue remaining
         print(f"Completed enqueue of {len(remainingCrawlTargets)} URLs")
 

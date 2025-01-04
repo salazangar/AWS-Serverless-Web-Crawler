@@ -14,10 +14,10 @@ class ServerlessWebCrawlerStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # Dynamo Model
-        # PK: VisitedURL
-        # SK: RunId#Date
-        # SourceURL (Where Did I come from?)
-        # RootURL (Where Did I start?)
+        # Primary Key: VisitedURL
+        # Sort Key: RunId#Date (identifying)
+        # SourceURL 
+        # RootURL 
 
         #Dynamo - VisitedUrls Table
         table = _dynamodb.Table(self, "VisitedURLs",
@@ -39,7 +39,6 @@ class ServerlessWebCrawlerStack(Stack):
             runtime=_lambda.Runtime.PYTHON_3_9,
             index="initiator.py",
             handler="handle"
-            #environment={"VisitedURLsTableARN": table.table_arn}
         )
 
         #Crawler
@@ -53,16 +52,14 @@ class ServerlessWebCrawlerStack(Stack):
             reserved_concurrent_executions=2,
             dead_letter_queue_enabled=True,
             dead_letter_queue=crawlerDLQ
-            #environment={"VisitedURLsTableARN": table.table_arn}
         )
         
-
-        #Queue read write permissions
+        #Queue permissions
         crawlerQueue.grant_send_messages(initiatorFunction)
         crawlerQueue.grant_send_messages(crawlerFunction)
         crawlerQueue.grant_consume_messages(crawlerFunction)
 
-        #DynamoDB read write permissions
+        #DynamoDB permissions
         table.grant_read_write_data(initiatorFunction)
         table.grant_read_write_data(crawlerFunction)
 
